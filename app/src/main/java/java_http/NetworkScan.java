@@ -34,6 +34,10 @@ public class NetworkScan {
             for (NetworkInterface network : networks) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Display Name: " + network.getDisplayName() + "\n");
+                sb.append("Network Characteristics:\n");
+
+                sb.append(getNetworkCharacteristics(network));
+
                 sb.append("\t\tIP Addresses:\n");
                 networkAddresses.add(Collections.list(network.getInetAddresses()));
                 for (InetAddress address : networkAddresses.get(networkAddresses.size() - 1)) {
@@ -55,5 +59,18 @@ public class NetworkScan {
         return networkDisplayName;
     }
 
-
+    public StringBuilder getNetworkCharacteristics(NetworkInterface network) throws SocketException {
+        StringBuilder sb = new StringBuilder();
+        try {
+            sb.append("\t\tis loopback: " + network.isLoopback() + "\n");
+            sb.append("\t\tis point to point: " + network.isPointToPoint() + "\n");
+            sb.append("\t\tis up: " + network.isUp() + "\n");
+            sb.append("\t\tis virtual: " + network.isVirtual() + "\n");
+            sb.append("\t\tsupports multicast: " + network.supportsMulticast() + "\n");
+        } catch (SocketException e) {
+            System.err.println(e.getMessage());
+        }
+        sb.append("\n");
+        return sb;
+    }
 }
