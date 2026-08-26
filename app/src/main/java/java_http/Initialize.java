@@ -1,5 +1,4 @@
 package java_http;
-import java.io.EOFException;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -14,18 +13,19 @@ public class Initialize {
         System.out.println("Welcome to http_java");
         Scanner sc = new Scanner(System.in);
 
-        getRole(sc);
+        instantiateRole(sc);
     }
 
     public Role getRole() {
         return this.role;
     }
     
-    private void getRole(Scanner sc) throws NoSuchElementException, IllegalStateException {
+    private void instantiateRole(Scanner sc) throws NoSuchElementException, IllegalStateException {
         System.out.println("\nWill you be playing the role of the client or server today? (c/s)");
         try {
             if (sc.hasNext()) {
                 String response = sc.nextLine();
+                System.out.println(response);
                 this.role = switch (response) {
                     case "c" -> {
                         yield Role.CLIENT;
@@ -42,7 +42,7 @@ public class Initialize {
 
                 if (role == Role.UNKNOWN) {
                     System.out.format("%s is not a valid selection.", response);
-                    getRole(sc);
+                    instantiateRole(sc);
                 }
             } else {
                 role = Role.UNKNOWN;
