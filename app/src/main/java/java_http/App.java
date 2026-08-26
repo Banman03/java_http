@@ -1,4 +1,5 @@
 package java_http;
+import java_http.server.Server;
 
 public class App {    
     public static void main(String[] args) {
@@ -6,10 +7,14 @@ public class App {
         NetworkScan ns = new NetworkScan();
 
         switch(init.getRole()) {
-            case Role.SERVER ->
+            case Role.SERVER -> {
                 System.out.println("You are a server.");
-            case Role.CLIENT ->
+                Server serv = new Server();
+            }
+            case Role.CLIENT -> {
                 System.out.println("You are a client.");
+                Client client = new Client();
+            }
             default -> {
                 System.err.println("Unknown role. Exiting");
                 return;
