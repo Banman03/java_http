@@ -24,6 +24,7 @@ public class NetworkScan {
                 System.out.println("Unknown response.");
             }
         }
+        // sc.close();
     }
 
     private void runScan() {

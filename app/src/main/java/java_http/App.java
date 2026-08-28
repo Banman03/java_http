@@ -1,5 +1,6 @@
 package java_http;
-import java_http.server.Server;
+import java_http.server.*;
+import java_http.client.*;
 
 public class App {    
     public static void main(String[] args) {
@@ -10,6 +11,7 @@ public class App {
             case Role.SERVER -> {
                 System.out.println("You are a server.");
                 Server serv = new Server();
+
             }
             case Role.CLIENT -> {
                 System.out.println("You are a client.");

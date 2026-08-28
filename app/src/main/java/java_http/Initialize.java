@@ -30,11 +30,9 @@ public class Initialize {
                     case "c" -> {
                         yield Role.CLIENT;
                     }
-
                     case "s" -> {
                         yield Role.SERVER;
                     }
-
                     default -> {
                         yield Role.UNKNOWN;
                     }
