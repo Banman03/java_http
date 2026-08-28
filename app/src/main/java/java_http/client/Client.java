@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java_http.NumericalConstants;
 
@@ -74,16 +75,21 @@ public class Client {
         return new byte[0];
     }
 
-    public void writeCommandLine() {
+    public void writeCommandLineToBuffer() {
         Scanner sc = new Scanner(System.in);
         while (!sc.nextLine().equals("exit")) {
             String message = sc.nextLine();
             writeData(message);
 
-            if (isBufferEmpty()) {
-                readData();
+            if (!isBufferEmpty()) {
+                byte[] serverData = readData();
+                System.out.format("The client has received: %s.\n", bytesToString(serverData));
             }
         }
+    }
+
+    public String bytesToString(byte[] input) {
+        return new String(input, StandardCharsets.UTF_8);
     }
 
     public boolean isBufferEmpty() {

@@ -13,12 +13,12 @@ public class App {
                 Server serv = new Server();
                 serv.bindLocally();
                 serv.acceptLocally();
-                listen();
+                serv.listenCommandLineFromBuffer();
             }
             case Role.CLIENT -> {
                 System.out.println("You are a client.");
                 Client client = new Client();
-                converse();
+                client.writeCommandLineToBuffer();
             }
             default -> {
                 System.err.println("Unknown role. Exiting");

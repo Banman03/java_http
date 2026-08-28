@@ -118,13 +118,25 @@ public class Server {
         return new byte[0];
     }
 
-    public void listenCommandLine() {
+    public void listenCommandLineFromBuffer() {
         Scanner sc = new Scanner(System.in);
         while (!sc.nextLine().equals("exit")) {
             if (!isBufferEmpty()) {
-                
+                byte[] clientData = readData();
+                System.out.format("The server has received: %s.\n", bytesToString(clientData));
+                String serverResponse =  "Message received.";
+                writeData(serverResponse);
             }
         }
+    }
+
+    protected boolean isBufferEmpty() {
+        try {
+            return socketReadBuffer.available() == 0;
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+        return true;
     }
 
     public String bytesToString(byte[] input) {
