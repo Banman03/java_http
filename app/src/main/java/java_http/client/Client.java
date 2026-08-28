@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
+import java_http.NumericalConstants;
 
 public class Client {
     private Socket socket;
@@ -13,7 +14,6 @@ public class Client {
     private InetAddress address;
     private OutputStream socketWriteBuffer;
     private InputStream socketReadBuffer;
-    private final static int RECEIVE_BUFFER_SIZE = 8192;
 
     public Client() {
         System.out.println("What port should the client be bound to?\n");
@@ -34,7 +34,7 @@ public class Client {
                 socketWriteBuffer = socket.getOutputStream();
             }
             
-            if (!socket.isOutputShutdown()) {
+            if (!socket.isOutputShutdown() && !socket.isClosed()) {
                     socket.setSendBufferSize(data.getBytes().length);
                     socketWriteBuffer.flush();
                     socketWriteBuffer.write(data.getBytes());
@@ -45,8 +45,6 @@ public class Client {
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-
-
     }
 
     public byte[] readData() {
@@ -56,10 +54,10 @@ public class Client {
                 socketReadBuffer = socket.getInputStream();
             }
             
-            if (!socket.isInputShutdown()) {
-                socket.setReceiveBufferSize(RECEIVE_BUFFER_SIZE);
+            if (!socket.isInputShutdown() && !socket.isClosed()) {
+                socket.setReceiveBufferSize(NumericalConstants.RECEIVE_BUFFER_SIZE);
                 System.out.format("Estimated reading %d bytes.\n", socketReadBuffer.available());
-                byte[] input = new byte[RECEIVE_BUFFER_SIZE];
+                byte[] input = new byte[NumericalConstants.RECEIVE_BUFFER_SIZE];
                 totalBytesRead = socketReadBuffer.read(input);
                 System.out.format("Read %d bytes.\n", totalBytesRead);
                 return input;
@@ -73,5 +71,17 @@ public class Client {
             System.out.println("0 bytes were read. Error somewhere?\n");
         }
         return new byte[0];
+    }
+
+    public void closeSocketLocally() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        } 
+    }
+
+    public Socket getClientSocket() {
+        return socket;
     }
 }
