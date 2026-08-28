@@ -11,11 +11,14 @@ public class App {
             case Role.SERVER -> {
                 System.out.println("You are a server.");
                 Server serv = new Server();
-
+                serv.bindLocally();
+                serv.acceptLocally();
+                listen();
             }
             case Role.CLIENT -> {
                 System.out.println("You are a client.");
                 Client client = new Client();
+                converse();
             }
             default -> {
                 System.err.println("Unknown role. Exiting");

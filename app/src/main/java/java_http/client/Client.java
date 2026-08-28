@@ -19,6 +19,7 @@ public class Client {
         System.out.println("What port should the client be bound to?\n");
         Scanner sc = new Scanner(System.in);
         port = sc.nextInt();
+        System.out.format("Binding client to port: %d.\n", port);
 
         address = InetAddress.getLoopbackAddress();
         try {
@@ -73,6 +74,27 @@ public class Client {
         return new byte[0];
     }
 
+    public void writeCommandLine() {
+        Scanner sc = new Scanner(System.in);
+        while (!sc.nextLine().equals("exit")) {
+            String message = sc.nextLine();
+            writeData(message);
+
+            if (isBufferEmpty()) {
+                readData();
+            }
+        }
+    }
+
+    public boolean isBufferEmpty() {
+        try {
+            return socketReadBuffer.available() == 0;
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+        return true;
+    }
+    
     public void closeSocketLocally() {
         try {
             socket.close();

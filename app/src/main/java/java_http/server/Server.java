@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.Scanner;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java_http.NumericalConstants;
 
 public class Server {
@@ -115,6 +116,19 @@ public class Server {
             System.out.println("0 bytes were read. Error somewhere?\n");
         }
         return new byte[0];
+    }
+
+    public void listenCommandLine() {
+        Scanner sc = new Scanner(System.in);
+        while (!sc.nextLine().equals("exit")) {
+            if (!isBufferEmpty()) {
+                
+            }
+        }
+    }
+
+    public String bytesToString(byte[] input) {
+        return new String(input, StandardCharsets.UTF_8);
     }
 
     public ServerSocket getServerSocket() {
