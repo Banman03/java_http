@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java_http.NumericalConstants;
+import java_http.utils.*;
 
 public class Client {
     private Socket socket;
@@ -32,13 +33,13 @@ public class Client {
         }
     }
 
-    public void writeData(String data) {
+    public void writeData(SocketMessage message) {
         try {
             if (!socket.isOutputShutdown() && !socket.isClosed()) {
-                    socket.setSendBufferSize(data.getBytes().length);
-                    System.out.format("data size: %d.\n", data.getBytes().length);
+                    socket.setSendBufferSize(message.getDataLength());
+                    System.out.format("data size: %d.\n", message.getDataLength());
                     socketWriteBuffer.flush();
-                    socketWriteBuffer.write(data.getBytes());
+                    socketWriteBuffer.write(message.getData());
                     System.out.println("Data sent.\n");
             } else {
                 System.out.println("Write stream has already been shut down.\n");
@@ -77,7 +78,8 @@ public class Client {
                 if (serverResponse == null) {
                     break;
                 }
-                System.out.format("Client received: %s\n", bytesToString(serverResponse));
+                SocketMessage message = new SocketMessage(serverResponse);
+                System.out.format("Client received: %s\n", message.dataToString());
             }
         });
 
@@ -89,8 +91,10 @@ public class Client {
             String input = sc.nextLine();
             if (input.toLowerCase().equals("exit")) {
                 break;
-            }
-            writeData(input);
+            } else if (input.isEmpty()) continue;
+            
+            SocketMessage message = new SocketMessage(input.getBytes());
+            writeData(message);
         }
         System.out.println("Exiting\n");
     }

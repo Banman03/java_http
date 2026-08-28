@@ -9,6 +9,7 @@ import java.util.Scanner;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java_http.NumericalConstants;
+import java_http.utils.*;
 
 public class Server {
     private ServerSocket socket;
@@ -74,15 +75,16 @@ public class Server {
         }
     }
 
-    public void writeData(String data) {
+    public void writeData(SocketMessage message) {
         try {
-            if (!clientSocket.isOutputShutdown() && !socket.isClosed()) {
-                clientSocket.setSendBufferSize(data.getBytes().length);
+            if (!clientSocket.isOutputShutdown() && !clientSocket.isClosed()) {
+                clientSocket.setSendBufferSize(message.getDataLength());
+                System.out.format("data size: %d.\n", message.getDataLength());
                 socketWriteBuffer.flush();
-                socketWriteBuffer.write(data.getBytes());
-                System.out.println("(Server) Data sent.\n");
+                socketWriteBuffer.write(message.getData());
+                System.out.println("Data sent.\n");
             } else {
-                System.out.println("(Server) Write stream has already been shut down.\n");
+                System.out.println("Write stream has already been shut down.\n");
             }
         } catch (Exception e) {
             System.err.println(e.getMessage());
@@ -113,11 +115,13 @@ public class Server {
 
     public void listenCommandLineFromBuffer() {
         while (true) {
-            if (!isBufferEmpty()) {
+            if (!BufferUtils.isBufferEmpty(socketReadBuffer)) {
                 byte[] clientData = readData();
-                System.out.format("The server has received: %s.\n", bytesToString(clientData));
+                SocketMessage message = new SocketMessage(clientData);
+                System.out.format("The server has received: %s.\n", message.dataToString());
                 String serverResponse =  "Message received.";
-                writeData(serverResponse);
+                SocketMessage responseMessage = new SocketMessage(serverResponse.getBytes());
+                writeData(responseMessage);
             }
         }
     }

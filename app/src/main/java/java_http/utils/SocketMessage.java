@@ -19,4 +19,12 @@ public class SocketMessage {
     public String dataToString() {
         return new String(data, 0, dataLength, StandardCharsets.UTF_8);
     }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public int getDataLength() {
+        return dataLength;
+    }
 }
