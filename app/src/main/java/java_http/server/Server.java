@@ -64,7 +64,8 @@ public class Server {
             try {
                 clientSocket = socket.accept();
                 System.out.format("Conencted to the client socket at %s.\n", clientSocket.getInetAddress().getHostAddress());
-
+                socketReadBuffer = clientSocket.getInputStream();
+                socketWriteBuffer = clientSocket.getOutputStream();
             } catch (IOException e) {
                 System.err.println(e.getMessage());
             }
@@ -75,10 +76,6 @@ public class Server {
 
     public void writeData(String data) {
         try {
-            if (socketWriteBuffer == null) {
-                socketWriteBuffer = clientSocket.getOutputStream();
-            }
-
             if (!clientSocket.isOutputShutdown() && !socket.isClosed()) {
                 clientSocket.setSendBufferSize(data.getBytes().length);
                 socketWriteBuffer.flush();
@@ -95,10 +92,6 @@ public class Server {
     public byte[] readData() {
         int totalBytesRead = 0;
         try {
-            if (socketReadBuffer == null) {
-                socketReadBuffer = clientSocket.getInputStream();
-            }
-
             if (!clientSocket.isInputShutdown() && !clientSocket.isClosed()) {
                 clientSocket.setReceiveBufferSize(NumericalConstants.RECEIVE_BUFFER_SIZE);
                 System.out.format("(Server) Estimated reading %d bytes.\n", socketReadBuffer.available());
@@ -119,8 +112,7 @@ public class Server {
     }
 
     public void listenCommandLineFromBuffer() {
-        Scanner sc = new Scanner(System.in);
-        while (!sc.nextLine().equals("exit")) {
+        while (true) {
             if (!isBufferEmpty()) {
                 byte[] clientData = readData();
                 System.out.format("The server has received: %s.\n", bytesToString(clientData));
@@ -128,19 +120,6 @@ public class Server {
                 writeData(serverResponse);
             }
         }
-    }
-
-    protected boolean isBufferEmpty() {
-        try {
-            return socketReadBuffer.available() == 0;
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-        }
-        return true;
-    }
-
-    public String bytesToString(byte[] input) {
-        return new String(input, StandardCharsets.UTF_8);
     }
 
     public ServerSocket getServerSocket() {

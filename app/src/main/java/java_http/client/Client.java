@@ -25,6 +25,8 @@ public class Client {
         address = InetAddress.getLoopbackAddress();
         try {
             socket = new Socket(address, port);
+            socketReadBuffer = socket.getInputStream();
+            socketWriteBuffer = socket.getOutputStream();
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
@@ -32,12 +34,9 @@ public class Client {
 
     public void writeData(String data) {
         try {
-            if (socketWriteBuffer == null) {
-                socketWriteBuffer = socket.getOutputStream();
-            }
-            
             if (!socket.isOutputShutdown() && !socket.isClosed()) {
                     socket.setSendBufferSize(data.getBytes().length);
+                    System.out.format("data size: %d.\n", data.getBytes().length);
                     socketWriteBuffer.flush();
                     socketWriteBuffer.write(data.getBytes());
                     System.out.println("Data sent.\n");
@@ -52,10 +51,6 @@ public class Client {
     public byte[] readData() {
         int totalBytesRead = 0;
         try {
-            if (socketReadBuffer == null) {
-                socketReadBuffer = socket.getInputStream();
-            }
-            
             if (!socket.isInputShutdown() && !socket.isClosed()) {
                 socket.setReceiveBufferSize(NumericalConstants.RECEIVE_BUFFER_SIZE);
                 System.out.format("Estimated reading %d bytes.\n", socketReadBuffer.available());
@@ -76,29 +71,28 @@ public class Client {
     }
 
     public void writeCommandLineToBuffer() {
-        Scanner sc = new Scanner(System.in);
-        while (!sc.nextLine().equals("exit")) {
-            String message = sc.nextLine();
-            writeData(message);
-
-            if (!isBufferEmpty()) {
-                byte[] serverData = readData();
-                System.out.format("The client has received: %s.\n", bytesToString(serverData));
+        Thread serverResponseThread = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                byte[] serverResponse = readData();
+                if (serverResponse == null) {
+                    break;
+                }
+                System.out.format("Client received: %s\n", bytesToString(serverResponse));
             }
-        }
-    }
+        });
 
-    public String bytesToString(byte[] input) {
-        return new String(input, StandardCharsets.UTF_8);
-    }
-
-    public boolean isBufferEmpty() {
-        try {
-            return socketReadBuffer.available() == 0;
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
+        serverResponseThread.setDaemon(true);
+        serverResponseThread.start();
+        
+        Scanner sc = new Scanner(System.in);
+        while (true) {
+            String input = sc.nextLine();
+            if (input.toLowerCase().equals("exit")) {
+                break;
+            }
+            writeData(input);
         }
-        return true;
+        System.out.println("Exiting\n");
     }
     
     public void closeSocketLocally() {
