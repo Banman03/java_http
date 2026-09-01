@@ -7,7 +7,10 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.Scanner;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java_http.NumericalConstants;
+import java_http.http.HttpMethod;
 import java_http.utils.*;
 
 public class Server {
@@ -17,6 +20,7 @@ public class Server {
     private Socket clientSocket;
     private OutputStream socketWriteBuffer;
     private InputStream socketReadBuffer;
+    private byte[] dataToServe;
 
     
     public Server() {
@@ -112,17 +116,70 @@ public class Server {
         return new byte[0];
     }
 
-    public void listenCommandLineFromBuffer() {
+    // For now, we will assume that incoming requests follow HTTP/1.0; this will eventually change
+    public void httpRequestListener() {
         while (true) {
             if (!BufferUtils.isBufferEmpty(socketReadBuffer)) {
                 byte[] clientData = readData();
-                SocketMessage message = new SocketMessage(clientData);
-                System.out.format("The server has received: %s.\n", message.dataToString());
-                String serverResponse =  "Message received.";
-                SocketMessage responseMessage = new SocketMessage(serverResponse.getBytes());
-                writeData(responseMessage);
+                
+                boolean successfulRequest = processHttpRequest(clientData);
+                
+                if (successfulRequest) {
+                    SocketMessage message = new SocketMessage(dataToServe);
+                    writeData(message);
+                }
             }
         }
+    }
+
+    private boolean processHttpRequest(byte[] data) {
+        String[] requestComponents = printHttpRequest(data).split(" ");
+        HttpMethod method = HttpMethod.parseMethodSafe(requestComponents[0].toUpperCase()).get();
+        boolean isRequestSuccessful = false;
+        
+        switch (method) {
+            case GET -> {
+                isRequestSuccessful = retrieveData(requestComponents[1]);
+            }
+            case POST -> {
+
+            }
+            case PUT -> {
+
+            }
+            case DELETE -> {
+                
+            }
+        }
+        return isRequestSuccessful;
+    }
+
+    private boolean retrieveData(String requestPath) {
+        Path filePath = Path.of(requestPath);
+        if (!isValidFile(filePath)) return false;
+
+        try {
+            InputStream fileReader = Files.newInputStream(filePath, StandardOpenOption.READ);
+            if (fileReader.available() == 0) {
+                fileReader.close();
+                return false;
+            }
+            dataToServe = fileReader.readAllBytes();
+            fileReader.close();
+            return true;
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean isValidFile(Path filePath) {
+        if (!Files.exists(filePath, LinkOption.NOFOLLOW_LINKS) || !Files.isReadable(filePath) || Files.isDirectory(filePath, LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(filePath)) return false;
+        return true;
+    }
+
+    private static String printHttpRequest(byte[] data) {
+        return new String(data, 0, data.length, StandardCharsets.UTF_8);
     }
 
     public ServerSocket getServerSocket() {
