@@ -22,6 +22,6 @@ public enum HttpMethod {
     
     public static Optional<HttpMethod> parseMethodSafe(String input) {
         if (input.isBlank()) return Optional.empty();
-        return Optional.ofNullable(BY_METHOD.get(input.trim().toLowerCase()));
+        return Optional.ofNullable(BY_METHOD.get(input.trim().toUpperCase()));
     }
 }

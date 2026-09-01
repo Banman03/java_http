@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Scanner;
 import java_http.NumericalConstants;
 import java_http.http.HttpMethod;
@@ -124,15 +125,15 @@ public class Client {
 
     private CliUtils isValidRequestLine(String requestLine) {
         String[] headerComponents = requestLine.split(" ");
-        if (requestLine.toLowerCase().equals("exit"))
+        if (headerComponents[0].toLowerCase().equals("exit"))
             return CliUtils.EXIT_CLI;
         // headerComponents[0] : method; headerComponents[1] : host/path;
         // headerComponents[2] : version
         else if (requestLine.isBlank() || headerComponents.length != 3)
             return CliUtils.CONTINUE_CLI;
 
-        if (!HttpMethod.parseMethodSafe(headerComponents[0]).isPresent())
-            return CliUtils.CONTINUE_CLI;
+        if (!HttpMethod.parseMethodSafe(headerComponents[0].toUpperCase()).isPresent())
+            return CliUtils.CONTINUE_CLI;            
 
         HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
         System.out.println(method.getHttpMethod());
