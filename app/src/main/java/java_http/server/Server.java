@@ -5,13 +5,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.util.Scanner;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java_http.NumericalConstants;
 import java_http.http.HttpMethod;
 import java_http.utils.*;
+import java.util.*;
 
 public class Server {
     private ServerSocket socket;
@@ -135,8 +135,11 @@ public class Server {
     // ONLY WRITING STRINGS ATM OR ELSE THE HEADER/BODY DELIMITER WONT WORK
     private boolean processHttpRequest(byte[] data) {
         String httpData = printHttpRequest(data);
-        String[] requestComponents = httpData.split("'\r''\n''\r''\n'");
+        System.out.println(httpData);
+        String[] requestComponents = httpData.split("\r\n\r\n", 2);
+        System.out.println(Arrays.toString(requestComponents));
         String[] headerComponents = requestComponents[0].split(" "); // if there is no body, requestComponents will have len 1
+        System.out.println(Arrays.toString(headerComponents));
 
         HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0].toUpperCase()).get();
         
@@ -149,6 +152,7 @@ public class Server {
                 yield processPostRequest(headerComponents[1], requestComponents[1]);
             }
             case PUT -> {
+                System.out.println("processing");
                 if (requestComponents.length < 2) yield false;
                 yield processPutRequest(headerComponents[1], requestComponents[1]);
             }
@@ -165,15 +169,17 @@ public class Server {
     private boolean processPutRequest(String requestPath, String requestBody) {
         // needs to be idempotent: calling multiple times is the same as calling once
         int lastBackslash = requestPath.lastIndexOf('/');
-        String fileName = requestPath.substring(lastBackslash);
+        String fileName = lastBackslash == 0 ? requestPath.substring(1) : requestPath.substring(lastBackslash);
         String directoryName = requestPath.replaceAll(fileName, "");
         Path directoryPath = Path.of(directoryName);
 
         if (canWrite(directoryPath)) {
             Path fullPath = Path.of(requestPath);
             try {
+                System.out.println("here");
                 Files.deleteIfExists(fullPath);
-                OutputStream writeStream = Files.newOutputStream(fullPath, StandardOpenOption.WRITE);
+                OutputStream writeStream = Files.newOutputStream(fullPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+                System.out.format("full path: %s", fullPath);
                 writeStream.write(requestBody.getBytes(StandardCharsets.UTF_8));
                 writeStream.close();
                 return true;
