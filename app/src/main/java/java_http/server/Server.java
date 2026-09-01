@@ -139,10 +139,10 @@ public class Server {
         
         switch (method) {
             case GET -> {
-                isRequestSuccessful = retrieveData(requestComponents[1]);
+                isRequestSuccessful = processGetRequest(requestComponents[1]);
             }
             case POST -> {
-
+                // isRequestSuccessful = processPostRequest(requestComponents[1]);
             }
             case PUT -> {
 
@@ -154,7 +154,7 @@ public class Server {
         return isRequestSuccessful;
     }
 
-    private boolean retrieveData(String requestPath) {
+    private boolean processGetRequest(String requestPath) {
         Path filePath = Path.of(requestPath);
         if (!isValidFile(filePath)) return false;
 

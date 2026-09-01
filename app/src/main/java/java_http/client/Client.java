@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java_http.NumericalConstants;
 import java_http.http.HttpMethod;
@@ -136,12 +136,31 @@ public class Client {
             return CliUtils.CONTINUE_CLI;            
 
         HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
-        System.out.println(method.getHttpMethod());
         String URI = new String(headerComponents[1]);
         HttpVersion version = new HttpVersion(headerComponents[2]);
+
+        if (method == HttpMethod.POST || method == HttpMethod.PUT) {
+            byte[] data = buildRequestBody();
+            request = new HttpRequest(method, URI, version, data);
+            return CliUtils.OTHER;
+        }
         
         request = new HttpRequest(method, URI, version, null);
         return CliUtils.OTHER;
+    }
+
+    private static byte[] buildRequestBody() {
+        System.out.println("Input data.\n");
+        Scanner sc = new Scanner(System.in);
+        StringBuilder requestBody = new StringBuilder();
+
+        while (true) {
+            String input = sc.nextLine();
+            if (input.toLowerCase().equals("0x0000")) break;
+            requestBody.append(input);
+        }
+        
+        return requestBody.toString().getBytes(StandardCharsets.US_ASCII);
     }
     
     public void closeSocketLocally() {
