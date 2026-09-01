@@ -17,7 +17,11 @@ public class HttpRequest {
         String headerString = new String(method.getHttpMethod() + " " + URI + " " + version.getHttpVersion());
         this.header = new SocketMessage(headerString.getBytes(StandardCharsets.US_ASCII));
         if (body == null) this.body = new SocketMessage(new byte[0]);
-        else this.body = new SocketMessage(body);
+        else {
+            byte[] delimiter = {'\r', '\n', '\r', '\n'};
+            byte[] compliantBody = combineByteArrays(delimiter, body);
+            this.body = new SocketMessage(compliantBody);
+        }
 
     }
 
@@ -27,10 +31,15 @@ public class HttpRequest {
         return true;
     }
 
+    public static byte[] combineByteArrays(byte[] a, byte[] b) {
+        byte[] finalArray = new byte[a.length + b.length];
+        System.arraycopy(a, 0, finalArray, 0, a.length);
+        System.arraycopy(b, 0, finalArray, a.length, b.length);
+        return finalArray;
+    }
+
     public SocketMessage getHttpRequestAsSocketMessage() {
-        byte[] res = new byte[header.getDataLength() + body.getDataLength()];
-        System.arraycopy(header.getData(), 0, res, 0, header.getDataLength());
-        System.arraycopy(body.getData(), 0, res, header.getDataLength(), body.getDataLength());
+        byte[] res = combineByteArrays(header.getData(), body.getData());
         return new SocketMessage(res);
     }
     

@@ -132,40 +132,73 @@ public class Server {
         }
     }
 
+    // ONLY WRITING STRINGS ATM OR ELSE THE HEADER/BODY DELIMITER WONT WORK
     private boolean processHttpRequest(byte[] data) {
-        String[] requestComponents = printHttpRequest(data).split(" ");
-        HttpMethod method = HttpMethod.parseMethodSafe(requestComponents[0].toUpperCase()).get();
-        boolean isRequestSuccessful = false;
+        String httpData = printHttpRequest(data);
+        String[] requestComponents = httpData.split("'\r''\n''\r''\n'");
+        String[] headerComponents = requestComponents[0].split(" "); // if there is no body, requestComponents will have len 1
+
+        HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0].toUpperCase()).get();
         
-        switch (method) {
+        boolean isRequestSuccessful = switch (method) {
             case GET -> {
-                isRequestSuccessful = processGetRequest(requestComponents[1]);
+                yield processGetRequest(headerComponents[1]);
             }
             case POST -> {
-                // isRequestSuccessful = processPostRequest(requestComponents[1]);
+                if (requestComponents.length < 2) yield false;
+                yield processPostRequest(headerComponents[1], requestComponents[1]);
             }
             case PUT -> {
-
+                if (requestComponents.length < 2) yield false;
+                yield processPutRequest(headerComponents[1], requestComponents[1]);
             }
             case DELETE -> {
-                
+                yield false;
             }
-        }
+            case HEAD -> {
+                yield false;
+            }
+        };
         return isRequestSuccessful;
     }
 
+    private boolean processPutRequest(String requestPath, String requestBody) {
+        // needs to be idempotent: calling multiple times is the same as calling once
+        int lastBackslash = requestPath.lastIndexOf('/');
+        String fileName = requestPath.substring(lastBackslash);
+        String directoryName = requestPath.replaceAll(fileName, "");
+        Path directoryPath = Path.of(directoryName);
+
+        if (canWrite(directoryPath)) {
+            Path fullPath = Path.of(requestPath);
+            try {
+                Files.deleteIfExists(fullPath);
+                OutputStream writeStream = Files.newOutputStream(fullPath, StandardOpenOption.WRITE);
+                writeStream.write(requestBody.getBytes(StandardCharsets.UTF_8));
+                writeStream.close();
+                return true;
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    private boolean processPostRequest(String requestPath, String requestBody) {
+        return false;
+    }
+
+    private static boolean canWrite(Path directory) {
+        if (Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS) && Files.isWritable(directory)) return true;
+        return false;
+    }
+    
     private boolean processGetRequest(String requestPath) {
         Path filePath = Path.of(requestPath);
         if (!isValidFile(filePath)) return false;
 
         try {
-            InputStream fileReader = Files.newInputStream(filePath, StandardOpenOption.READ);
-            if (fileReader.available() == 0) {
-                fileReader.close();
-                return false;
-            }
-            dataToServe = fileReader.readAllBytes();
-            fileReader.close();
+            dataToServe = Files.readAllBytes(filePath);
             return true;
         } catch (IOException e) {
             System.err.println(e.getMessage());
@@ -174,8 +207,8 @@ public class Server {
     }
 
     private static boolean isValidFile(Path filePath) {
-        if (!Files.exists(filePath, LinkOption.NOFOLLOW_LINKS) || !Files.isReadable(filePath) || Files.isDirectory(filePath, LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(filePath)) return false;
-        return true;
+        if (Files.exists(filePath, LinkOption.NOFOLLOW_LINKS) && Files.isReadable(filePath) && !Files.isDirectory(filePath, LinkOption.NOFOLLOW_LINKS) && !Files.isSymbolicLink(filePath)) return true;
+        return false;
     }
 
     private static String printHttpRequest(byte[] data) {
