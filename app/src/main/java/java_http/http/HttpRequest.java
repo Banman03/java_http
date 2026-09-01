@@ -9,7 +9,7 @@ public class HttpRequest {
     private final SocketMessage header;
     private SocketMessage body;
 
-    public HttpRequest(HttpVersion version, HttpMethod method, String URI, byte[] body) throws IllegalArgumentException {
+    public HttpRequest(HttpMethod method, String URI, HttpVersion version, byte[] body) throws IllegalArgumentException {
         if (!isValidRequest(method, body)) {
             throw new IllegalArgumentException("Cannot have this combination of method and body");
         }
@@ -20,8 +20,8 @@ public class HttpRequest {
     }
 
     private boolean isValidRequest(HttpMethod method, byte[] body) {
-        if (body.length > 0 && (method == HttpMethod.GET || method == HttpMethod.HEAD)) return false;
-        if (body.length == 0 && (method == HttpMethod.POST || method == HttpMethod.PUT)) return false;
+        if (body != null && body.length > 0 && (method == HttpMethod.GET || method == HttpMethod.HEAD)) return false;
+        if (body == null && (method == HttpMethod.POST || method == HttpMethod.PUT)) return false;
         return true;
     }
 

@@ -1,15 +1,13 @@
 package java_http.http;
 
 public class HttpVersion {
-    private final Integer majorVersion;
-    private final Integer minorVersion;
+    private final String versionString;
 
-    HttpVersion(int mav, int miv) {
-        majorVersion = mav;
-        minorVersion = miv;
+    public HttpVersion(String version) {
+        versionString = version;
     }
 
     public String getHttpVersion() {
-        return new String("HTTP/" + majorVersion.toString() + "." + minorVersion.toString());
+        return versionString;
     }
 }
