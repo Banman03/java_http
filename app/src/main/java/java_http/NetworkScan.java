@@ -39,10 +39,10 @@ public class NetworkScan {
 
                 sb.append(getNetworkCharacteristics(network));
 
-                sb.append("\t\tIP Addresses:\n");
+                sb.append("\t\tAddresses:\n");
                 networkAddresses.add(Collections.list(network.getInetAddresses()));
                 for (InetAddress address : networkAddresses.get(networkAddresses.size() - 1)) {
-                    sb.append("\t\t" + address.getHostAddress() + "\n");
+                    sb.append("\t\t" + address.getHostName() + " (" + address.getHostAddress() + ")" + "\n");
                 }
                 System.out.println(sb);
             }

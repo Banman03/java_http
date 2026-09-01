@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java_http.NumericalConstants;
 import java_http.utils.*;
@@ -92,7 +91,7 @@ public class Client {
             if (input.toLowerCase().equals("exit")) {
                 break;
             } else if (input.isEmpty()) continue;
-            
+
             SocketMessage message = new SocketMessage(input.getBytes());
             writeData(message);
         }
