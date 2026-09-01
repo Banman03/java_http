@@ -16,7 +16,9 @@ public class HttpRequest {
         
         String headerString = new String(method.getHttpMethod() + " " + URI + " " + version.getHttpVersion());
         this.header = new SocketMessage(headerString.getBytes(StandardCharsets.US_ASCII));
-        this.body = new SocketMessage(body);
+        if (body == null) this.body = new SocketMessage(new byte[0]);
+        else this.body = new SocketMessage(body);
+
     }
 
     private boolean isValidRequest(HttpMethod method, byte[] body) {

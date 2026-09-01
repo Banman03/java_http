@@ -9,7 +9,6 @@ import java.util.Scanner;
 import java_http.NumericalConstants;
 import java_http.http.HttpMethod;
 import java_http.http.HttpVersion;
-import java_http.http.HttpMethod.*;
 import java_http.http.HttpRequest;
 import java_http.utils.*;
 
@@ -75,7 +74,39 @@ public class Client {
         return new byte[0];
     }
 
-    public void writeCommandLineToBuffer() {
+    public void writeCommandLine() {
+        instantiateListenerThread();
+        
+        Scanner sc = new Scanner(System.in);
+        while (true) {
+            String input = sc.nextLine();
+            if (input.toLowerCase().equals("exit")) {
+                break;
+            } else if (input.isBlank()) continue;
+
+            SocketMessage message = new SocketMessage(input.getBytes());
+            writeData(message);
+        }
+    }
+    
+    public void writeHttpRequest() {
+        instantiateListenerThread();
+
+        Scanner sc = new Scanner(System.in);
+        while (true) {
+            String requestLine = sc.nextLine();
+            CliUtils cliState = isValidRequestLine(requestLine);
+            if (cliState == CliUtils.CONTINUE_CLI) {
+                System.out.println("continuing");
+                continue;
+            }
+            else if (cliState == CliUtils.EXIT_CLI) break;
+            writeData(request.getHttpRequestAsSocketMessage());
+        }
+        System.out.println("Exiting\n");
+    }
+
+    private void instantiateListenerThread() {
         Thread serverResponseThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 byte[] serverResponse = readData();
@@ -89,62 +120,27 @@ public class Client {
 
         serverResponseThread.setDaemon(true);
         serverResponseThread.start();
-        
-        Scanner sc = new Scanner(System.in);
-        while (true) {
-            String input = sc.nextLine();
-            if (input.toLowerCase().equals("exit")) {
-                break;
-            } else if (input.isBlank()) continue;
-
-            SocketMessage message = new SocketMessage(input.getBytes());
-            writeData(message);
-        }
-        System.out.println("Exiting\n");
     }
 
-    public void writeHttpRequest() {
-        Thread serverResponseThread = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                byte[] serverResponse = readData();
-                if (serverResponse == null) {
-                    break;
-                }
-                SocketMessage message = new SocketMessage(serverResponse);
-                System.out.format("HTTP Response: %s\n", message.dataToString());
-            }
-        });
-
-        serverResponseThread.setDaemon(true);
-        serverResponseThread.start();
-
-        Scanner sc = new Scanner(System.in);
-        while (true) {
-            String requestLine = sc.nextLine();
-            if (!isValidRequestLine(requestLine)) continue;
-            
-            writeData(request.getHttpRequestAsSocketMessage());
-        }
-    }
-
-    private boolean isValidRequestLine(String requestLine) {
+    private CliUtils isValidRequestLine(String requestLine) {
         String[] headerComponents = requestLine.split(" ");
         if (requestLine.toLowerCase().equals("exit"))
-            return false;
+            return CliUtils.EXIT_CLI;
         // headerComponents[0] : method; headerComponents[1] : host/path;
         // headerComponents[2] : version
         else if (requestLine.isBlank() || headerComponents.length != 3)
-            return false;
+            return CliUtils.CONTINUE_CLI;
 
         if (!HttpMethod.parseMethodSafe(headerComponents[0]).isPresent())
-            return false;
+            return CliUtils.CONTINUE_CLI;
 
         HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
+        System.out.println(method.getHttpMethod());
         String URI = new String(headerComponents[1]);
         HttpVersion version = new HttpVersion(headerComponents[2]);
         
         request = new HttpRequest(method, URI, version, null);
-        return true;
+        return CliUtils.OTHER;
     }
     
     public void closeSocketLocally() {

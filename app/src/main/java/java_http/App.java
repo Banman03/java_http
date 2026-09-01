@@ -21,7 +21,7 @@ public class App {
             case Role.CLIENT -> {
                 System.out.println("You are a client.");
                 Client client = new Client();
-                client.writeCommandLineToBuffer();
+                client.writeHttpRequest();
             }
             default -> {
                 System.err.println("Unknown role. Exiting");
