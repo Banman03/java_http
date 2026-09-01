@@ -16,7 +16,7 @@ public class App {
                 Server serv = new Server();
                 serv.bindLocally();
                 serv.acceptLocally();
-                serv.listenCommandLineFromBuffer();
+                serv.httpRequestListener();
             }
             case Role.CLIENT -> {
                 System.out.println("You are a client.");
