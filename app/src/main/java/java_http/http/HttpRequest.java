@@ -24,11 +24,7 @@ public class HttpRequest {
         this.header = new SocketMessage(headerObject.getHttpKVPAsByte());
         
         if (body == null) this.body = new SocketMessage(new byte[0]);
-        else {
-            byte[] delimiter = {'\r', '\n', '\r', '\n'};
-            byte[] compliantBody = combineByteArrays(delimiter, body);
-            this.body = new SocketMessage(compliantBody);
-        }
+        else this.body = new SocketMessage(body);
     }
 
     private boolean isValidRequest(HttpMethod method, byte[] body) {

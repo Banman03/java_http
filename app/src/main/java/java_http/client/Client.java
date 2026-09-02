@@ -57,6 +57,7 @@ public class Client {
                     socket.setSendBufferSize(message.getDataLength());
                     System.out.format("data size: %d.\n", message.getDataLength());
                     socketWriteBuffer.flush();
+                    System.out.println(message.dataToString());
                     socketWriteBuffer.write(message.getData());
                     System.out.println("Data sent.\n");
             } else {

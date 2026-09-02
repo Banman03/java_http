@@ -15,8 +15,9 @@ public class HttpHeader {
         }
         StringBuilder sb = new StringBuilder();
         for (HashMap.Entry<String, String> entry : kvp.entrySet()) {
-            sb.append(entry.getKey() + ": " + entry.getValue() + ",\n");
+            sb.append(entry.getKey() + ": " + entry.getValue() + "\r\n");
         }
+        sb.append("\r\n\r\n");
         kvpString = sb.toString();
     }
 
