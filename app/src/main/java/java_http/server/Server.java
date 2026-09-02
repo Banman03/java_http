@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java_http.NumericalConstants;
 import java_http.http.HttpMethod;
+import java_http.http.HttpResponse;
 import java_http.utils.*;
 import java.util.*;
 
@@ -135,12 +136,8 @@ public class Server {
     // ONLY WRITING STRINGS ATM OR ELSE THE HEADER/BODY DELIMITER WONT WORK
     private boolean processHttpRequest(byte[] data) {
         String httpData = printHttpRequest(data);
-        System.out.println(httpData);
         String[] requestComponents = httpData.split("\r\n\r\n", 2);
-        System.out.println(Arrays.toString(requestComponents));
         String[] headerComponents = requestComponents[0].split(" "); // if there is no body, requestComponents will have len 1
-        System.out.println(Arrays.toString(headerComponents));
-
         HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0].toUpperCase()).get();
         
         boolean isRequestSuccessful = switch (method) {
@@ -152,7 +149,6 @@ public class Server {
                 yield processPostRequest(headerComponents[1], requestComponents[1]);
             }
             case PUT -> {
-                System.out.println("processing");
                 if (requestComponents.length < 2) yield false;
                 yield processPutRequest(headerComponents[1], requestComponents[1]);
             }
@@ -163,7 +159,13 @@ public class Server {
                 yield false;
             }
         };
-        return isRequestSuccessful;
+
+        // assume data to serve may already have data, so we need to prepend our http response headers
+        if (isRequestSuccessful) {
+            HttpResponse = new HttpResponse(headerComponents[2], 200, httpData, data)
+        } else {
+            
+        }
     }
 
     private boolean processPutRequest(String requestPath, String requestBody) {
@@ -176,10 +178,8 @@ public class Server {
         if (canWrite(directoryPath)) {
             Path fullPath = Path.of(requestPath);
             try {
-                System.out.println("here");
                 Files.deleteIfExists(fullPath);
                 OutputStream writeStream = Files.newOutputStream(fullPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-                System.out.format("full path: %s", fullPath);
                 writeStream.write(requestBody.getBytes(StandardCharsets.UTF_8));
                 writeStream.close();
                 return true;
