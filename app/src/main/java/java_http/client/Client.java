@@ -7,10 +7,10 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.net.UnknownHostException;
-import java.util.Scanner;
+import java.util.*;
 import java_http.NumericalConstants;
-import java_http.http.HttpMethod;
-import java_http.http.HttpVersion;
+import java_http.http.httpUtils.HttpMethod;
+import java_http.http.httpUtils.HttpVersion;
 import java_http.http.HttpRequest;
 import java_http.utils.*;
 
@@ -110,6 +110,9 @@ public class Client {
         Scanner sc = new Scanner(System.in);
         while (true) {
             String requestLine = sc.nextLine();
+            String[] headers = getRequestHeaders(sc);
+            byte[] body = getRequestBody(sc);
+
             CliUtils cliState = isValidRequestLine(requestLine);
             if (cliState == CliUtils.CONTINUE_CLI) {
                 System.out.println("continuing");
@@ -163,14 +166,27 @@ public class Client {
         return CliUtils.OTHER;
     }
 
-    private static byte[] buildRequestBody() {
+
+    private static String[] getRequestHeaders(Scanner sc) {
+        System.out.println("Input headers.\n");
+        ArrayList<String> product = new ArrayList<>();
+        while (true) {
+            String header = sc.nextLine();
+            if (header.toLowerCase().equals("0x0000"))
+                break;
+            product.add(header);
+        }
+        return product.toArray(new String[0]);
+    }
+    
+    private static byte[] getRequestBody(Scanner sc) {
         System.out.println("Input data.\n");
-        Scanner sc = new Scanner(System.in);
         StringBuilder requestBody = new StringBuilder();
 
         while (true) {
             String input = sc.nextLine();
-            if (input.toLowerCase().equals("0x0000")) break;
+            if (input.toLowerCase().equals("0x0000")) 
+                break;
             requestBody.append(input);
         }
         
