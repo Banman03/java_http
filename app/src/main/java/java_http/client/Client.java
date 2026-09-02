@@ -110,15 +110,29 @@ public class Client {
         Scanner sc = new Scanner(System.in);
         while (true) {
             String requestLine = sc.nextLine();
-            String[] headers = getRequestHeaders(sc);
-            byte[] body = getRequestBody(sc);
 
             CliUtils cliState = isValidRequestLine(requestLine);
             if (cliState == CliUtils.CONTINUE_CLI) {
                 System.out.println("continuing");
                 continue;
+            } else if (cliState == CliUtils.EXIT_CLI)
+                break;
+            
+            String[] headerComponents = requestLine.split(" ");
+
+            HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
+            String URI = new String(headerComponents[1]);
+            HttpVersion version = new HttpVersion(headerComponents[2]);
+
+            String[] headers = getRequestHeaders(sc);
+            
+            if (method == HttpMethod.POST || method == HttpMethod.PUT) {
+                byte[] data = getRequestBody(sc);
+                request = new HttpRequest(method, URI, version, headers, data);
+            } else {
+                request = new HttpRequest(method, URI, version, headers, null);
             }
-            else if (cliState == CliUtils.EXIT_CLI) break;
+
             writeData(request.getHttpRequestAsSocketMessage());
         }
         System.out.println("Exiting\n");
@@ -144,25 +158,12 @@ public class Client {
         String[] headerComponents = requestLine.split(" ");
         if (headerComponents[0].toLowerCase().equals("exit"))
             return CliUtils.EXIT_CLI;
-        // headerComponents[0] : method; headerComponents[1] : host/path;
-        // headerComponents[2] : version
         else if (requestLine.isBlank() || headerComponents.length != 3)
             return CliUtils.CONTINUE_CLI;
 
         if (!HttpMethod.parseMethodSafe(headerComponents[0].toUpperCase()).isPresent())
             return CliUtils.CONTINUE_CLI;            
-
-        HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
-        String URI = new String(headerComponents[1]);
-        HttpVersion version = new HttpVersion(headerComponents[2]);
-
-        if (method == HttpMethod.POST || method == HttpMethod.PUT) {
-            byte[] data = buildRequestBody();
-            request = new HttpRequest(method, URI, version, data);
-            return CliUtils.OTHER;
-        }
         
-        request = new HttpRequest(method, URI, version, null);
         return CliUtils.OTHER;
     }
 

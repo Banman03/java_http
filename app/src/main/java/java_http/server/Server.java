@@ -9,10 +9,8 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java_http.NumericalConstants;
-import java_http.http.HttpMethod;
+import java_http.http.httpUtils.*;
 import java_http.http.HttpResponse;
-import java_http.http.HttpResponseCodes;
-import java_http.http.HttpVersion;
 import java_http.utils.*;
 import java.util.*;
 

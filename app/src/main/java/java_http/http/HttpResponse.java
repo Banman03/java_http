@@ -1,7 +1,7 @@
 package java_http.http;
 
 import java.nio.charset.StandardCharsets;
-
+import java_http.http.httpUtils.*;
 import java_http.utils.SocketMessage;
 
 public class HttpResponse {
