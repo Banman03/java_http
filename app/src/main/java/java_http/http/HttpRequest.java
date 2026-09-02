@@ -6,6 +6,7 @@ import java_http.utils.SocketMessage;
 
 public class HttpRequest {
     
+    private final SocketMessage requestLine;
     private final SocketMessage header;
     private SocketMessage body;
 
@@ -42,5 +43,4 @@ public class HttpRequest {
         byte[] res = combineByteArrays(header.getData(), body.getData());
         return new SocketMessage(res);
     }
-    
 }

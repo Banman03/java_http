@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 import java_http.NumericalConstants;
 import java_http.http.HttpMethod;
@@ -24,10 +25,23 @@ public class Client {
     public Client() {
         System.out.println("What port should the client be bound to?\n");
         Scanner sc = new Scanner(System.in);
-        port = sc.nextInt();
+        port = Integer.parseInt(sc.nextLine());
         System.out.format("Binding client to port: %d.\n", port);
 
-        address = InetAddress.getLoopbackAddress();
+        System.out.println("Input hostname to connect to, or leave empty to connect to localhost.\n");
+        String host = sc.nextLine();
+        if (!host.equals("\r\n") && !host.equals("\n")) {
+            try {
+                address = InetAddress.getByName(host);
+            } catch (UnknownHostException e) {
+                System.err.println(e.getMessage());
+                System.out.println("The host could not be resolved, defaulting to loopback address.\n");
+                address = InetAddress.getLoopbackAddress();
+            }
+        } else {
+            address = InetAddress.getLoopbackAddress();
+        }
+        
         try {
             socket = new Socket(address, port);
             socketReadBuffer = socket.getInputStream();

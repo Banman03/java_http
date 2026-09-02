@@ -1,4 +1,4 @@
-package java_http.http;
+package java_http.http.httpUtils;
 
 public class HttpVersion {
     private final String versionString;

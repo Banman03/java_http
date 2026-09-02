@@ -1,4 +1,4 @@
-package java_http.http;
+package java_http.http.httpUtils;
 
 public enum HttpResponseCodes {
     CONTINUE(100), OK(200), CREATED(201), NO_CONTENT(204), MULTIPLE_CHOICES(300), MOVED_PERM(301), SEE_OTHER(303),
