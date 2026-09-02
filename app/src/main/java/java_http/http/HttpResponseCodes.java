@@ -8,8 +8,8 @@ public enum HttpResponseCodes {
 
     private Integer responseCode;
 
-    public Integer getResponseCode() {
-        return responseCode;
+    public String getResponseDetails() {
+        return new String(this.name() + " " + responseCode.toString());
     }
 
     private HttpResponseCodes(Integer code) {

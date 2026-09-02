@@ -20,6 +20,11 @@ public class SocketMessage {
         return new String(data, 0, dataLength, StandardCharsets.UTF_8);
     }
 
+    public void addData(byte[] data) {
+        dataLength = data.length;
+        this.data = data;
+    }
+
     public byte[] getData() {
         return data;
     }

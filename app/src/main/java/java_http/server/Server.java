@@ -11,6 +11,8 @@ import java.nio.file.*;
 import java_http.NumericalConstants;
 import java_http.http.HttpMethod;
 import java_http.http.HttpResponse;
+import java_http.http.HttpResponseCodes;
+import java_http.http.HttpVersion;
 import java_http.utils.*;
 import java.util.*;
 
@@ -22,6 +24,7 @@ public class Server {
     private OutputStream socketWriteBuffer;
     private InputStream socketReadBuffer;
     private byte[] dataToServe;
+    private HttpResponse response;
 
     
     public Server() {
@@ -123,21 +126,20 @@ public class Server {
             if (!BufferUtils.isBufferEmpty(socketReadBuffer)) {
                 byte[] clientData = readData();
                 
-                boolean successfulRequest = processHttpRequest(clientData);
+                processHttpRequest(clientData);
                 
-                if (successfulRequest) {
-                    SocketMessage message = new SocketMessage(dataToServe);
-                    writeData(message);
-                }
+                SocketMessage message = response.getHttpResponseAsSocketMessage();
+                writeData(message);
             }
         }
     }
 
     // ONLY WRITING STRINGS ATM OR ELSE THE HEADER/BODY DELIMITER WONT WORK
-    private boolean processHttpRequest(byte[] data) {
+    private void processHttpRequest(byte[] data) {
         String httpData = printHttpRequest(data);
         String[] requestComponents = httpData.split("\r\n\r\n", 2);
         String[] headerComponents = requestComponents[0].split(" "); // if there is no body, requestComponents will have len 1
+        HttpVersion version = new HttpVersion(headerComponents[2]);
         HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0].toUpperCase()).get();
         
         boolean isRequestSuccessful = switch (method) {
@@ -160,11 +162,11 @@ public class Server {
             }
         };
 
-        // assume data to serve may already have data, so we need to prepend our http response headers
+        // assume data to serve may already have data, so we need to prepend our http response headers (defaulting to 200 right now)
         if (isRequestSuccessful) {
-            HttpResponse = new HttpResponse(headerComponents[2], 200, httpData, data)
+            response = new HttpResponse(version, HttpResponseCodes.OK, dataToServe);
         } else {
-            
+            response = new HttpResponse(version, HttpResponseCodes.BAD_REQUEST, dataToServe);
         }
     }
 

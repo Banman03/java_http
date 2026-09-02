@@ -5,11 +5,14 @@ import java.nio.charset.StandardCharsets;
 import java_http.utils.SocketMessage;
 
 public class HttpResponse {
-    private final SocketMessage header;
+    private SocketMessage header;
     private SocketMessage body;
 
-    public HttpResponse(HttpVersion version, Integer responseCode, String details, byte[] body) {
-        String headerString = new String(version.getHttpVersion() + " " + responseCode.toString() + " " + details);
+    public HttpResponse() {
+    }
+    
+    public HttpResponse(HttpVersion version, HttpResponseCodes code, byte[] body) {
+        String headerString = new String(version.getHttpVersion() + " " + code.getResponseDetails());
         this.header = new SocketMessage(headerString.getBytes(StandardCharsets.US_ASCII));
 
         if (body == null)
