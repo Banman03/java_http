@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -23,10 +21,9 @@ public class Client {
     private OutputStream socketWriteBuffer;
     private InputStream socketReadBuffer;
     private HttpRequest request;
-    private volatile static boolean shouldKillThread = false;
-    // private volatile ArrayList<Boolean> shouldKillThreadArray;
+    private String hostName;
 
-    public Client() {
+    public Client(String hostName, int port) {
         System.out.println("What port should the client be bound to?\n");
         Scanner sc = new Scanner(System.in);
         port = Integer.parseInt(sc.nextLine());
@@ -37,13 +34,16 @@ public class Client {
         if (!host.equals("\r\n") && !host.equals("\n")) {
             try {
                 address = InetAddress.getByName(host);
+                hostName = host;
             } catch (UnknownHostException e) {
                 System.err.println(e.getMessage());
                 System.out.println("The host could not be resolved, defaulting to loopback address.\n");
                 address = InetAddress.getLoopbackAddress();
+                hostName = "loopback";
             }
         } else {
             address = InetAddress.getLoopbackAddress();
+            hostName = "loopback";
         }
         
         try {
@@ -232,5 +232,9 @@ public class Client {
 
     public Socket getClientSocket() {
         return socket;
+    }
+
+    public String getHostName() {
+        return hostName;
     }
 }
