@@ -3,7 +3,7 @@ import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 enum Role {
-    SERVER, CLIENT, UNKNOWN;
+    SERVER, CLIENT_MANAGER, UNKNOWN;
 }
 
 public class Initialize {
@@ -21,14 +21,14 @@ public class Initialize {
     }
     
     private void instantiateRole(Scanner sc) throws NoSuchElementException, IllegalStateException {
-        System.out.println("\nWill you be playing the role of the client or server today? (c/s)");
+        System.out.println("\nWill you be playing the role of the client manager or server today? (cm/s)");
         try {
             if (sc.hasNext()) {
                 String response = sc.nextLine();
                 System.out.println(response);
                 this.role = switch (response) {
-                    case "c" -> {
-                        yield Role.CLIENT;
+                    case "cm" -> {
+                        yield Role.CLIENT_MANAGER;
                     }
                     case "s" -> {
                         yield Role.SERVER;

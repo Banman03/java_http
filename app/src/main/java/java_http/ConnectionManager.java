@@ -53,12 +53,12 @@ public class ConnectionManager {
 
         System.out.format("Connection Manager Commands:\n");
         System.out.format("\tnew [hostname] (leave blank to connect to loopback) [port number]\tReturns ID that can be used to delete connections\n");
-        System.out.format("\remove [ID]\tReturns void\n");
+        System.out.format("\remove [ID]\tReturns successfull or not\n");
 
         System.out.format("Connection Specific Commands:\n");
-        System.out.format("\t[HTTP Request Line] *enter*\n");
-        System.out.format("\t[HTTP Headers] *0x0000*\n");
-        System.out.format("\t[Body] *0x0000*\n");
+        System.out.format("\tHTTP Request Line *enter*\n");
+        System.out.format("\tHTTP Headers *0x0000*\n");
+        System.out.format("\tBody *0x0000*\n");
     }
 
     private UserCommand parseCommand(String userCommand) {
@@ -88,7 +88,16 @@ public class ConnectionManager {
     }
 
     private void removeConnection(String userCommand) {
-
+        Matcher matcher = bracketPattern.matcher(userCommand);
+        if (matcher.find()) {
+            clientIdMap.get(UUID.fromString(matcher.group(1))).closeSocketLocally();
+            if (clientIdMap.get(UUID.fromString(matcher.group(1))).getClientSocket().isClosed()) {
+                System.out.format("Successfully closed socket!\n");
+                clientIdMap.remove(UUID.fromString(matcher.group(1)));
+            } else {
+                System.out.format("Socket failed to close.\n");
+            }
+        }
     }
 
     private void listActiveConnections(String userCommand) {
@@ -97,13 +106,13 @@ public class ConnectionManager {
             String hostName = matcher.group(1);
             if (hostName.isBlank()) {
                 System.out.format("All connections:\n\n");
-                for (HashMap.Entry<String, Client> entry : clientIdMap.entrySet()) {
-                    System.out.format("%s : %s\n", entry.getKey(), entry.getValue().getHostName());
+                for (HashMap.Entry<UUID, Client> entry : clientIdMap.entrySet()) {
+                    System.out.format("%s : %s\n", entry.getKey().toString(), entry.getValue().getHostName());
                 }
             } else {
                 System.out.format("All connections to %s:\n\n", hostName);
-                for (String entry : HostNameIdMap.get(hostName)) {
-                    System.out.format("%s\n", entry);
+                for (UUID id : HostNameIdMap.get(hostName)) {
+                    System.out.format("%s\n", id.toString());
                 }
             }
         } else {

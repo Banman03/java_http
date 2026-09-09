@@ -118,39 +118,14 @@ public class Client implements AutoCloseable {
         }
         return new byte[0];
     }
-
-    public void writeCommandLine() {
-        
-        Scanner sc = new Scanner(System.in);
-        while (true) {
-            String input = sc.nextLine();
-            if (input.toLowerCase().equals("exit")) {
-                break;
-            } else if (input.isBlank()) continue;
-
-            SocketMessage message = new SocketMessage(input.getBytes());
-            writeData(message);
-        }
-    }
     
-    public void writeHttpRequest() {
-
+    public void writeHttpRequest(String requestLine) {
         Scanner sc = new Scanner(System.in);
-        while (listenerThread.isAlive()) {
-            String requestLine = sc.nextLine();
-
+        while (isOpen()) {
             CliUtils cliState = isValidRequestLine(requestLine);
             if (cliState == CliUtils.CONTINUE_CLI) {
                 System.out.println("continuing");
                 continue;
-            } else if (cliState == CliUtils.EXIT_CLI) {
-                listenerThread.interrupt();
-                try {
-                    listenerThread.join();
-                } catch (InterruptedException e) {
-                    System.err.println(e.getMessage());
-                }
-                break;
             }
             
             String[] headerComponents = requestLine.split(" ");
@@ -170,28 +145,11 @@ public class Client implements AutoCloseable {
 
             writeData(request.getHttpRequestAsSocketMessage());
         }
-        
-        if (!listenerThread.isAlive()) {
-            System.out.println("Exiting\n");
-        } else {
-            listenerThread.interrupt();
-            try {
-                listenerThread.join();
-                shouldKillThread = false;
-                closeSocketLocally();
-                socket = new Socket(address, port);
-                writeHttpRequest();
-            } catch (InterruptedException | IOException e) {
-                System.err.println(e.getMessage());
-            }
-        }
     }
 
     private CliUtils isValidRequestLine(String requestLine) {
         String[] headerComponents = requestLine.split(" ");
-        if (headerComponents[0].toLowerCase().equals("exit"))
-            return CliUtils.EXIT_CLI;
-        else if (requestLine.isBlank() || headerComponents.length != 3)
+        if (requestLine.isBlank() || headerComponents.length != 3)
             return CliUtils.CONTINUE_CLI;
 
         if (!HttpMethod.parseMethodSafe(headerComponents[0].toUpperCase()).isPresent())
@@ -226,8 +184,13 @@ public class Client implements AutoCloseable {
         
         return requestBody.toString().getBytes(StandardCharsets.US_ASCII);
     }
+
+    private boolean isOpen() {
+        return isListenerRunning && this.socket.isConnected() && !this.socket.isClosed();
+    }
     
     public void closeSocketLocally() {
+        isListenerRunning = false;
         try {
             socket.close();
         } catch (IOException e) {

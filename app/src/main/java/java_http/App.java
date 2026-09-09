@@ -18,8 +18,8 @@ public class App {
                 serv.acceptLocally();
                 serv.httpRequestListener();
             }
-            case Role.CLIENT -> {
-                System.out.println("You are a client.");
+            case Role.CLIENT_MANAGER -> {
+                System.out.println("You are the client manager.");
                 Client client = new Client();
                 client.writeHttpRequest();
             }
