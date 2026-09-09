@@ -14,7 +14,7 @@ import java_http.http.httpUtils.HttpVersion;
 import java_http.http.HttpRequest;
 import java_http.utils.*;
 
-public class Client {
+public class Client implements AutoCloseable {
     private Socket socket;
     private Integer port;
     private InetAddress address;
@@ -22,16 +22,16 @@ public class Client {
     private InputStream socketReadBuffer;
     private HttpRequest request;
     private String hostName;
+    private final Thread listenerThread;
+    private volatile boolean isListenerRunning = true;
+    private final UUID id;
 
-    public Client(String hostName, int port) {
-        System.out.println("What port should the client be bound to?\n");
-        Scanner sc = new Scanner(System.in);
-        port = Integer.parseInt(sc.nextLine());
+    public Client(String host, int port, UUID id) {
+        this.id = id;
         System.out.format("Binding client to port: %d.\n", port);
+        System.out.format("Connecting client to host: %s.\n", host.isBlank() ? "loopback" : host);
 
-        System.out.println("Input hostname to connect to, or leave empty to connect to localhost.\n");
-        String host = sc.nextLine();
-        if (!host.equals("\r\n") && !host.equals("\n")) {
+        if (!host.isBlank()) {
             try {
                 address = InetAddress.getByName(host);
                 hostName = host;
@@ -53,8 +53,37 @@ public class Client {
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
+
+        listenerThread = new Thread(this::listenLoop, "--runnable " + id.toString());
+        this.listenerThread.setDaemon(true);
+        this.listenerThread.start();
     }
 
+    private void listenLoop() {
+        while (isListenerRunning) {
+            byte[] serverResponse = readData();
+            if (serverResponse == null) {
+                System.out.format("Server closed connection. Killing client.\n");
+                break;
+            } else {
+                SocketMessage serverResponseSocketMessage = new SocketMessage(serverResponse);
+                System.out.format("Client received: %s\n", serverResponseSocketMessage.dataToString());
+            }
+        }
+        close();
+    }
+
+    @Override
+    public synchronized void close() {
+        if (!isListenerRunning) return;
+        isListenerRunning = false;
+        try {
+            this.socket.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    
     public void writeData(SocketMessage message) {
         try {
             if (!socket.isOutputShutdown() && !socket.isClosed()) {
@@ -76,7 +105,6 @@ public class Client {
         int totalBytesRead = 0;
         try {
             if (!socket.isInputShutdown() && !socket.isClosed()) {
-                socket.setReceiveBufferSize(NumericalConstants.RECEIVE_BUFFER_SIZE);
                 System.out.format("Estimated reading %d bytes.\n", socketReadBuffer.available());
                 byte[] input = new byte[NumericalConstants.RECEIVE_BUFFER_SIZE];
                 totalBytesRead = socketReadBuffer.read(input);
@@ -88,14 +116,10 @@ public class Client {
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-        if (totalBytesRead == 0) {
-            System.out.println("0 bytes were read. Error somewhere?\n");
-        }
         return new byte[0];
     }
 
     public void writeCommandLine() {
-        instantiateListenerThread();
         
         Scanner sc = new Scanner(System.in);
         while (true) {
@@ -110,7 +134,6 @@ public class Client {
     }
     
     public void writeHttpRequest() {
-        Thread listenerThread = instantiateListenerThread();
 
         Scanner sc = new Scanner(System.in);
         while (listenerThread.isAlive()) {
@@ -162,24 +185,6 @@ public class Client {
                 System.err.println(e.getMessage());
             }
         }
-    }
-
-    private Thread instantiateListenerThread() {
-        Thread serverResponseThread = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                byte[] serverResponse = readData();
-                if (serverResponse == null) {
-                    break;
-                }
-                SocketMessage message = new SocketMessage(serverResponse);
-                System.out.format("Client received: %s\n", message.dataToString());
-            }
-        });
-
-        serverResponseThread.setDaemon(true);
-        serverResponseThread.start();
-        
-        return serverResponseThread;
     }
 
     private CliUtils isValidRequestLine(String requestLine) {

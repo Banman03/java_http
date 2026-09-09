@@ -11,8 +11,8 @@ enum UserCommand {
 }
 
 public class ConnectionManager {
-    private HashMap<String, Client> clientIdMap;
-    private HashMap<String, ArrayList<String>> HostNameIdMap;
+    private HashMap<UUID, Client> clientIdMap;
+    private HashMap<String, ArrayList<UUID>> HostNameIdMap;
     private static final String baseString = ">> ";
     private static final Pattern bracketPattern = Pattern.compile("\\[([^\\]]*)\\]");
 
@@ -70,8 +70,21 @@ public class ConnectionManager {
     }
     
     private void createNewConnection(String userCommand) {
-        String[] args = userCommand.split(" ");
-
+        Matcher matcher = bracketPattern.matcher(userCommand);
+        String host = null;
+        String port = null;
+        
+        while (matcher.find()) {
+            if (host == null) host = matcher.group(1);
+            else port = matcher.group(1);
+        }
+        
+        if (host == null || port == null) {
+            System.out.format("The command \"%s\" could not be parsed.\n", userCommand);
+        }
+        UUID newId = UUID.randomUUID();
+        Client newClient = new Client(host, Integer.parseInt(port), newId);
+        clientIdMap.put(newId, newClient);
     }
 
     private void removeConnection(String userCommand) {
@@ -79,7 +92,7 @@ public class ConnectionManager {
     }
 
     private void listActiveConnections(String userCommand) {
-        Matcher matcher = pattern.matcher(userCommand);
+        Matcher matcher = bracketPattern.matcher(userCommand);
         if (matcher.find()) {
             String hostName = matcher.group(1);
             if (hostName.isBlank()) {
