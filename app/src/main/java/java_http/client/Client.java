@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -21,6 +23,8 @@ public class Client {
     private OutputStream socketWriteBuffer;
     private InputStream socketReadBuffer;
     private HttpRequest request;
+    private volatile static boolean shouldKillThread = false;
+    // private volatile ArrayList<Boolean> shouldKillThreadArray;
 
     public Client() {
         System.out.println("What port should the client be bound to?\n");
@@ -77,7 +81,7 @@ public class Client {
                 byte[] input = new byte[NumericalConstants.RECEIVE_BUFFER_SIZE];
                 totalBytesRead = socketReadBuffer.read(input);
                 System.out.format("Read %d bytes.\n", totalBytesRead);
-                return input;
+                return totalBytesRead == -1 ? null : input;
             } else {
                 System.out.println("Read stream has already been shut down.\n");
             }
@@ -106,18 +110,25 @@ public class Client {
     }
     
     public void writeHttpRequest() {
-        instantiateListenerThread();
+        Thread listenerThread = instantiateListenerThread();
 
         Scanner sc = new Scanner(System.in);
-        while (true) {
+        while (listenerThread.isAlive()) {
             String requestLine = sc.nextLine();
 
             CliUtils cliState = isValidRequestLine(requestLine);
             if (cliState == CliUtils.CONTINUE_CLI) {
                 System.out.println("continuing");
                 continue;
-            } else if (cliState == CliUtils.EXIT_CLI)
+            } else if (cliState == CliUtils.EXIT_CLI) {
+                listenerThread.interrupt();
+                try {
+                    listenerThread.join();
+                } catch (InterruptedException e) {
+                    System.err.println(e.getMessage());
+                }
                 break;
+            }
             
             String[] headerComponents = requestLine.split(" ");
 
@@ -136,10 +147,24 @@ public class Client {
 
             writeData(request.getHttpRequestAsSocketMessage());
         }
-        System.out.println("Exiting\n");
+        
+        if (!listenerThread.isAlive()) {
+            System.out.println("Exiting\n");
+        } else {
+            listenerThread.interrupt();
+            try {
+                listenerThread.join();
+                shouldKillThread = false;
+                closeSocketLocally();
+                socket = new Socket(address, port);
+                writeHttpRequest();
+            } catch (InterruptedException | IOException e) {
+                System.err.println(e.getMessage());
+            }
+        }
     }
 
-    private void instantiateListenerThread() {
+    private Thread instantiateListenerThread() {
         Thread serverResponseThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 byte[] serverResponse = readData();
@@ -153,6 +178,8 @@ public class Client {
 
         serverResponseThread.setDaemon(true);
         serverResponseThread.start();
+        
+        return serverResponseThread;
     }
 
     private CliUtils isValidRequestLine(String requestLine) {
