@@ -11,3 +11,10 @@
 - Currently the client only connects to the loopback address (localhost), going to next add support for connecting to any server.
 - Now the client is able to connect to any external server via hostname or ip (can also connect to loopback). The client can then send HTTP requests to these servers.
 - HTTP headers weren't working previously, so separated into a different class which is working nicely now. I need to fix an issue with the client listener thread because it starts reading an infinite loop of no data from the receive buffer, which is not good.
+
+### 9/9/26
+
+- I am starting to date the updates bc that seems like the smart thing to do. Anyways, I am unsatisfied with the architecture of the client at the moment. Currently, the client has a main thread (that the user types requests into); and a listener thread, which listens for responses from the server. This is not scalable because the user will have no way of specifying which server to send the requests to, things such as this. Here is what I propose:
+    - A two-tiered architecture, where the first tier is the connection manageer. This tier will keep track of all current connections, as well as open new ones and close ones that are either stale, or the user wants to close.
+    - The connection manager will also route requests to the correct write/listener pair, based on user input.
+    - The second tier is the work tier, which is made up of multiple pairs of writer/listener pairs. Each of these pairs includes the client socket and the read/write buffer. The connection manager is not responsible for the state of each of writer/listeners.
