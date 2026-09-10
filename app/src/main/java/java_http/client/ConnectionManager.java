@@ -1,22 +1,22 @@
-package java_http;
+package java_http.client;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import java_http.client.*;
 
 enum UserCommand {
     get_active, new_connection, remove_connection, exit, http_request;
 }
 
 public class ConnectionManager {
-    private HashMap<UUID, Client> clientIdMap;
-    private HashMap<String, ArrayList<UUID>> HostNameIdMap;
+    private HashMap<String, Client> clientIdMap;
+    private HashMap<String, ArrayList<String>> HostNameIdMap;
     private static final String baseString = ">> ";
     private static final Pattern bracketPattern = Pattern.compile("\\[([^\\]]*)\\]");
 
-    public ConnectionManager() {}
+    public ConnectionManager() {
+        clientIdMap = new HashMap<>();
+    }
 
     public void start() {
         Scanner sc = new Scanner(System.in);
@@ -42,21 +42,21 @@ public class ConnectionManager {
                     System.out.format("Goodbye!\n");
                     return;
                 case http_request:
-                    return;
+                    handleHttpRequest(userCommand);
             }
         }
     }
 
     public void printHelp() {
         System.out.format("Informational Commands:\n");
-        System.out.format("\tget-active [hostname] (leave empty to get all active connections)\tReturns list of active connections\n");
+        System.out.format("\tget-active [hostname] (leave empty to get all active connections)\tReturns list of active connections\n\n");
 
         System.out.format("Connection Manager Commands:\n");
-        System.out.format("\tnew [hostname] (leave blank to connect to loopback) [port number]\tReturns ID that can be used to delete connections\n");
-        System.out.format("\remove [ID]\tReturns successfull or not\n");
+        System.out.format("\tnew [ID] [hostname] (leave blank to connect to loopback) [port number]\tReturns ID that can be used to delete connections\n");
+        System.out.format("\tremove [ID]\tReturns successfull or not\n\n");
 
         System.out.format("Connection Specific Commands:\n");
-        System.out.format("\tHTTP Request Line *enter*\n");
+        System.out.format("\t[ID] HTTP-Request Route HTTP-Version*enter*\n"); // Slightly different syntax to standard http request header, but that's because I am routing the client requests
         System.out.format("\tHTTP Headers *0x0000*\n");
         System.out.format("\tBody *0x0000*\n");
     }
@@ -71,29 +71,28 @@ public class ConnectionManager {
     
     private void createNewConnection(String userCommand) {
         Matcher matcher = bracketPattern.matcher(userCommand);
+        String id = null;
         String host = null;
         String port = null;
         
-        while (matcher.find()) {
-            if (host == null) host = matcher.group(1);
-            else port = matcher.group(1);
-        }
+        if (matcher.find()) id = matcher.group(1);
+        if (matcher.find()) host = matcher.group(1);
+        if (matcher.find()) port = matcher.group(1);
         
-        if (host == null || port == null) {
+        if (id == null || host == null || port == null) {
             System.out.format("The command \"%s\" could not be parsed.\n", userCommand);
         }
-        UUID newId = UUID.randomUUID();
-        Client newClient = new Client(host, Integer.parseInt(port), newId);
-        clientIdMap.put(newId, newClient);
+        Client newClient = new Client(host, Integer.parseInt(port), id);
+        clientIdMap.put(id, newClient);
     }
 
     private void removeConnection(String userCommand) {
         Matcher matcher = bracketPattern.matcher(userCommand);
         if (matcher.find()) {
-            clientIdMap.get(UUID.fromString(matcher.group(1))).closeSocketLocally();
-            if (clientIdMap.get(UUID.fromString(matcher.group(1))).getClientSocket().isClosed()) {
+            clientIdMap.get(matcher.group(1)).closeSocketLocally();
+            if (clientIdMap.get(matcher.group(1)).getClientSocket().isClosed()) {
                 System.out.format("Successfully closed socket!\n");
-                clientIdMap.remove(UUID.fromString(matcher.group(1)));
+                clientIdMap.remove(matcher.group(1));
             } else {
                 System.out.format("Socket failed to close.\n");
             }
@@ -106,17 +105,28 @@ public class ConnectionManager {
             String hostName = matcher.group(1);
             if (hostName.isBlank()) {
                 System.out.format("All connections:\n\n");
-                for (HashMap.Entry<UUID, Client> entry : clientIdMap.entrySet()) {
-                    System.out.format("%s : %s\n", entry.getKey().toString(), entry.getValue().getHostName());
+                for (HashMap.Entry<String, Client> entry : clientIdMap.entrySet()) {
+                    System.out.format("%s : %s\n", entry.getKey(), entry.getValue().getHostName());
                 }
             } else {
                 System.out.format("All connections to %s:\n\n", hostName);
-                for (UUID id : HostNameIdMap.get(hostName)) {
-                    System.out.format("%s\n", id.toString());
+                for (String id : HostNameIdMap.get(hostName)) {
+                    System.out.format("%s\n", id);
                 }
             }
         } else {
             System.out.format("Invalid Command.\n");
         }
+    }
+
+    private void handleHttpRequest(String userCommand) {
+        Matcher matcher = bracketPattern.matcher(userCommand);
+        String id = null;
+
+        if (matcher.find()) id = matcher.group(1);
+        userCommand = userCommand.substring(matcher.end(1));
+        System.out.format("\nuser command: %s\n", userCommand);
+
+        clientIdMap.get(id).writeHttpRequest(userCommand);
     }
 }

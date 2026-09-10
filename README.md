@@ -18,3 +18,9 @@
     - A two-tiered architecture, where the first tier is the connection manageer. This tier will keep track of all current connections, as well as open new ones and close ones that are either stale, or the user wants to close.
     - The connection manager will also route requests to the correct write/listener pair, based on user input.
     - The second tier is the work tier, which is made up of multiple pairs of writer/listener pairs. Each of these pairs includes the client socket and the read/write buffer. The connection manager is not responsible for the state of each of writer/listeners.
+
+### 9/10/26
+- The two tiered approach appears to be working, although I am running into parsing issues with the http requests I am inputting from the command line. Part of me is tempted to use an actual parsing library that converts requests into an abstract syntax tree. I have mixed thoughts on this:
+    - If we convert into an AST, it will be far easier to handle requests. This will also support a future development that I would like to support: reading in http requests from files. If I do this, I don't need to rely on users to input delimiters between headers and the body, because it will be evident from the \r\n\r\n that is inputted.
+    - On the other hand, it seems like overkill to learn a parsing library solely for what is essentially having less of a headache when consuming input whitespace, etc. This is also a throwback to my compiler days.
+- I think I will go with the parse, because that will also resolve the http request issue I am currently dealing with.

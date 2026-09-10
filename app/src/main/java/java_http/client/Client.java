@@ -24,9 +24,9 @@ public class Client implements AutoCloseable {
     private String hostName;
     private final Thread listenerThread;
     private volatile boolean isListenerRunning = true;
-    private final UUID id;
+    private final String id;
 
-    public Client(String host, int port, UUID id) {
+    public Client(String host, int port, String id) {
         this.id = id;
         System.out.format("Binding client to port: %d.\n", port);
         System.out.format("Connecting client to host: %s.\n", host.isBlank() ? "loopback" : host);
@@ -54,7 +54,7 @@ public class Client implements AutoCloseable {
             System.err.println(e.getMessage());
         }
 
-        listenerThread = new Thread(this::listenLoop, "--runnable " + id.toString());
+        listenerThread = new Thread(this::listenLoop, "--runnable " + this.id);
         this.listenerThread.setDaemon(true);
         this.listenerThread.start();
     }
@@ -121,34 +121,33 @@ public class Client implements AutoCloseable {
     
     public void writeHttpRequest(String requestLine) {
         Scanner sc = new Scanner(System.in);
-        while (isOpen()) {
-            CliUtils cliState = isValidRequestLine(requestLine);
-            if (cliState == CliUtils.CONTINUE_CLI) {
-                System.out.println("continuing");
-                continue;
-            }
-            
-            String[] headerComponents = requestLine.split(" ");
-
-            HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
-            String URI = new String(headerComponents[1]);
-            HttpVersion version = new HttpVersion(headerComponents[2]);
-
-            String[] headers = getRequestHeaders(sc);
-            
-            if (method == HttpMethod.POST || method == HttpMethod.PUT) {
-                byte[] data = getRequestBody(sc);
-                request = new HttpRequest(method, URI, version, headers, data);
-            } else {
-                request = new HttpRequest(method, URI, version, headers, null);
-            }
-
-            writeData(request.getHttpRequestAsSocketMessage());
+        CliUtils cliState = isValidRequestLine(requestLine);
+        if (cliState == CliUtils.CONTINUE_CLI) {
+            System.out.println("continuing");
+            return;
         }
+        
+        String[] headerComponents = requestLine.split(" ");
+
+        HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
+        String URI = new String(headerComponents[1]);
+        HttpVersion version = new HttpVersion(headerComponents[2]);
+
+        String[] headers = getRequestHeaders(sc);
+        
+        if (method == HttpMethod.POST || method == HttpMethod.PUT) {
+            byte[] data = getRequestBody(sc);
+            request = new HttpRequest(method, URI, version, headers, data);
+        } else {
+            request = new HttpRequest(method, URI, version, headers, null);
+        }
+
+        writeData(request.getHttpRequestAsSocketMessage());
     }
 
     private CliUtils isValidRequestLine(String requestLine) {
         String[] headerComponents = requestLine.split(" ");
+        System.out.println(Arrays.toString(headerComponents));
         if (requestLine.isBlank() || headerComponents.length != 3)
             return CliUtils.CONTINUE_CLI;
 

@@ -1,8 +1,5 @@
 package java_http;
 import java_http.server.*;
-
-import java.net.InetAddress;
-
 import java_http.client.*;
 
 public class App {    
@@ -20,8 +17,8 @@ public class App {
             }
             case Role.CLIENT_MANAGER -> {
                 System.out.println("You are the client manager.");
-                Client client = new Client();
-                client.writeHttpRequest();
+                ConnectionManager manager = new ConnectionManager();
+                manager.start();
             }
             default -> {
                 System.err.println("Unknown role. Exiting");
