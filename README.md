@@ -28,4 +28,5 @@
     - If we convert into an AST, it will be far easier to handle requests. This will also support a future development that I would like to support: reading in http requests from files. If I do this, I don't need to rely on users to input delimiters between headers and the body, because it will be evident from the \r\n\r\n that is inputted.
     - On the other hand, it seems like overkill to learn a parsing library solely for what is essentially having less of a headache when consuming input whitespace, etc. This is also a throwback to my compiler days.
 - I think I will go with the parse, because that will also resolve the http request issue I am currently dealing with.
-- Here is the language for the parser: <img width="696" height="716" alt="image" src="https://github.com/user-attachments/assets/2acf525b-d84c-43e8-b196-2d19fb543cda" />
+- Here is the language for the parser:
+-  <img width="696" height="716" alt="image" src="https://github.com/user-attachments/assets/2acf525b-d84c-43e8-b196-2d19fb543cda" />
