@@ -119,29 +119,8 @@ public class Client implements AutoCloseable {
         return new byte[0];
     }
     
-    public void writeHttpRequest(String requestLine) {
-        Scanner sc = new Scanner(System.in);
-        CliUtils cliState = isValidRequestLine(requestLine);
-        if (cliState == CliUtils.CONTINUE_CLI) {
-            System.out.println("continuing");
-            return;
-        }
-        
-        String[] headerComponents = requestLine.split(" ");
-
-        HttpMethod method = HttpMethod.parseMethodSafe(headerComponents[0]).get();
-        String URI = new String(headerComponents[1]);
-        HttpVersion version = new HttpVersion(headerComponents[2]);
-
-        String[] headers = getRequestHeaders(sc);
-        
-        if (method == HttpMethod.POST || method == HttpMethod.PUT) {
-            byte[] data = getRequestBody(sc);
-            request = new HttpRequest(method, URI, version, headers, data);
-        } else {
-            request = new HttpRequest(method, URI, version, headers, null);
-        }
-
+    public void writeHttpRequest(HttpRequest request) {
+        this.request = request;
         writeData(request.getHttpRequestAsSocketMessage());
     }
 

@@ -1,12 +1,10 @@
 package java_http.client;
 
+import java.net.http.HttpRequest;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-enum UserCommand {
-    get_active, new_connection, remove_connection, exit, http_request;
-}
+import java_http.parser.*;
 
 public class ConnectionManager {
     private HashMap<String, Client> clientIdMap;
@@ -25,29 +23,30 @@ public class ConnectionManager {
         
         while (true) {
             System.out.println(baseString);
+            sc.useDelimiter("\n\n\n");
             String userCommand = sc.nextLine();
 
-            UserCommand command = parseCommand(userCommand);
+            Command command = Parser.parse(userCommand);
+            
             switch (command) {
-                case get_active:
-                    listActiveConnections(userCommand);
+                case ControlCommand cc -> {
+                    handleControlCommand(cc);
+                }
+                case HttpRequest hr -> {
+                    handleHttpRequest(hr);
+                }
+                case null -> {
+                    System.out.println("Goodbye!\n");
                     break;
-                case new_connection:
-                    createNewConnection(userCommand);
-                    break;
-                case remove_connection:
-                    removeConnection(userCommand);;
-                    break;
-                case exit:
-                    System.out.format("Goodbye!\n");
-                    return;
-                case http_request:
-                    handleHttpRequest(userCommand);
+                }
+                default -> {
+                    System.out.format("%s is an unknown command. Please input correctly.\n", userCommand);
+                }
             }
         }
     }
 
-    public void printHelp() {
+    private void printHelp() {
         System.out.format("Informational Commands:\n");
         System.out.format("\tget-active [hostname] (leave empty to get all active connections)\tReturns list of active connections\n\n");
 
@@ -61,72 +60,54 @@ public class ConnectionManager {
         System.out.format("\tBody *0x0000*\n");
     }
 
-    private UserCommand parseCommand(String userCommand) {
-        if (userCommand.startsWith("get-active")) return UserCommand.get_active;
-        if (userCommand.startsWith("new")) return UserCommand.new_connection;
-        if (userCommand.startsWith("remove")) return UserCommand.remove_connection;
-        if (userCommand.startsWith("exit")) return UserCommand.exit;
-        return UserCommand.http_request;
+    private void handleControlCommand(ControlCommand command) {
+        switch (command.action().toLowerCase()) {
+            case "get-active" -> {
+                listActiveConnections(command.host());
+            }
+            case "remove" -> {
+                removeConnection(command.id());
+            }
+            case "new" -> {
+                createNewConnection(command.id(), command.host(), command.port());
+            }
+        }
     }
     
-    private void createNewConnection(String userCommand) {
-        Matcher matcher = bracketPattern.matcher(userCommand);
-        String id = null;
-        String host = null;
-        String port = null;
-        
-        if (matcher.find()) id = matcher.group(1);
-        if (matcher.find()) host = matcher.group(1);
-        if (matcher.find()) port = matcher.group(1);
-        
+    private void createNewConnection(String id, String host, Integer port) {
+        if (host.isBlank()) host = "loopback";
         if (id == null || host == null || port == null) {
-            System.out.format("The command \"%s\" could not be parsed.\n", userCommand);
+            System.out.format("The command with id: %s, host: %s, and port: %d could not be parsed.\n", id, host, port);
         }
-        Client newClient = new Client(host, Integer.parseInt(port), id);
+        Client newClient = new Client(host, port, id);
         clientIdMap.put(id, newClient);
     }
 
-    private void removeConnection(String userCommand) {
-        Matcher matcher = bracketPattern.matcher(userCommand);
-        if (matcher.find()) {
-            clientIdMap.get(matcher.group(1)).closeSocketLocally();
-            if (clientIdMap.get(matcher.group(1)).getClientSocket().isClosed()) {
-                System.out.format("Successfully closed socket!\n");
-                clientIdMap.remove(matcher.group(1));
-            } else {
-                System.out.format("Socket failed to close.\n");
-            }
+    private void removeConnection(String id) {
+        clientIdMap.get(id).closeSocketLocally();
+        if (clientIdMap.get(id).getClientSocket().isClosed()) {
+            System.out.format("Successfully closed socket!\n");
+            clientIdMap.remove(id);
+        } else {
+            System.out.format("Socket failed to close.\n");
         }
     }
 
-    private void listActiveConnections(String userCommand) {
-        Matcher matcher = bracketPattern.matcher(userCommand);
-        if (matcher.find()) {
-            String hostName = matcher.group(1);
-            if (hostName.isBlank()) {
-                System.out.format("All connections:\n\n");
-                for (HashMap.Entry<String, Client> entry : clientIdMap.entrySet()) {
-                    System.out.format("%s : %s\n", entry.getKey(), entry.getValue().getHostName());
-                }
-            } else {
-                System.out.format("All connections to %s:\n\n", hostName);
-                for (String id : HostNameIdMap.get(hostName)) {
-                    System.out.format("%s\n", id);
-                }
+    private void listActiveConnections(String host) {
+        if (host.isBlank()) {
+            System.out.format("All connections:\n\n");
+            for (HashMap.Entry<String, Client> entry : clientIdMap.entrySet()) {
+                System.out.format("%s : %s\n", entry.getKey(), entry.getValue().getHostName());
             }
         } else {
-            System.out.format("Invalid Command.\n");
+            System.out.format("All connections to %s:\n\n", host);
+            for (String id : HostNameIdMap.get(host)) {
+                System.out.format("%s\n", id);
+            }
         }
     }
 
-    private void handleHttpRequest(String userCommand) {
-        Matcher matcher = bracketPattern.matcher(userCommand);
-        String id = null;
-
-        if (matcher.find()) id = matcher.group(1);
-        userCommand = userCommand.substring(matcher.end(1));
-        System.out.format("\nuser command: %s\n", userCommand);
-
-        clientIdMap.get(id).writeHttpRequest(userCommand);
+    private void handleHttpRequest(String id, HttpRequest request) {
+        clientIdMap.get(id).writeHttpRequest(request);
     }
 }

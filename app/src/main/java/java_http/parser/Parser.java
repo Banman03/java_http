@@ -1,11 +1,8 @@
 package java_http.parser;
 
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.regex.*;
-
 import java_http.http.HttpRequest;
 import java_http.http.httpUtils.HttpMethod;
 import java_http.http.httpUtils.HttpVersion;
@@ -32,6 +29,7 @@ public class Parser {
 
         String[] firstLineTokens = firstLine.split("\\s+");
         String leadToken = firstLineTokens[0];
+        if (leadToken.toLowerCase().equals("exit")) return null;
 
         if (HTTP_METHODS.contains(leadToken)) {
             return parseHttpCommand(lines);
