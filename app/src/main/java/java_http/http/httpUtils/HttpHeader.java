@@ -6,13 +6,8 @@ public class HttpHeader {
     private final HashMap<String, String> kvp;
     private String kvpString;
 
-    public HttpHeader(String[] fields) {
-        kvp = new HashMap<>();
-        for (String pair : fields) {
-            String[] tuple = pair.split(": ", 2);
-            if (tuple.length != 2) System.out.format("This kvp failed to parse: %s\n", pair);
-            kvp.put(tuple[0], tuple[1]);
-        }
+    public HttpHeader(HashMap<String, String> header) {
+        kvp = header;
         StringBuilder sb = new StringBuilder();
         for (HashMap.Entry<String, String> entry : kvp.entrySet()) {
             sb.append(entry.getKey() + ": " + entry.getValue() + "\r\n");

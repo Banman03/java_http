@@ -1,26 +1,27 @@
 package java_http.http;
 
 import java.nio.charset.StandardCharsets;
-
+import java.util.HashMap;
 import java_http.http.httpUtils.HttpHeader;
 import java_http.http.httpUtils.HttpMethod;
 import java_http.http.httpUtils.HttpVersion;
 import java_http.utils.SocketMessage;
+import java_http.parser.*;
 
-public class HttpRequest {
+final public class HttpRequest implements Command {
     
     private final SocketMessage requestLine;
     private final SocketMessage header;
     private SocketMessage body;
 
-    public HttpRequest(HttpMethod method, String URI, HttpVersion version, String[] headerLine, byte[] body) throws IllegalArgumentException {
+public HttpRequest(HttpMethod method, String URI, HttpVersion version, HashMap<String, String> headers, byte[] body) throws IllegalArgumentException {
         if (!isValidRequest(method, body)) {
             throw new IllegalArgumentException("Cannot have this combination of method and body");
         }
         
         String requestString = new String(method.getHttpMethod() + " " + URI + " " + version.getHttpVersion() + "\r\n");
         this.requestLine = new SocketMessage(requestString.getBytes(StandardCharsets.US_ASCII));
-        HttpHeader headerObject = new HttpHeader(headerLine);
+        HttpHeader headerObject = new HttpHeader(headers);
         this.header = new SocketMessage(headerObject.getHttpKVPAsByte());
         
         if (body == null) this.body = new SocketMessage(new byte[0]);
